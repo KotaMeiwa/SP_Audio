@@ -102,11 +102,17 @@ err_t SP_AudioPlayer::eventPlayer(msg_s *pmsg, File &myFile)
       theAudio->startPlayer(playerid);
       state = PLAYING;
       playerStatus[id] = PLAYING;
+      static bool cmd_resume_called = true;
+      cmd_resume_called = true;
       /* FALLTHRU */
     case CMD_PLAYCONTINUE:
-      if (err != AUDIOLIB_ECODE_FILEEND) {
+      //If this case is called after CMD_RESUME, error sometimes happens because too much audio data is pushed by writeFrames().
+      //If after CMD_RESUME, skipping writeFrames() could be solution for this problem.
+      if (err != AUDIOLIB_ECODE_FILEEND && !cmd_resume_called) {
         err = theAudio->writeFrames(playerid, myFile);
       }
+      cmd_resume_called = false;
+
       if (err == AUDIOLIB_ECODE_FILEEND) {
         goto stop;
       }
